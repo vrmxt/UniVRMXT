@@ -28,6 +28,7 @@ namespace UniVRMXT.Mtoonxt
         private readonly List<Slot> slots = new List<Slot>();
         private MaterialPropertyBlock propertyBlock;
         private MaterialPropertyBlock block => propertyBlock ?? (propertyBlock = new MaterialPropertyBlock());
+        [SerializeField, HideInInspector] internal Shader coverageShader;
         public int ReaderCount => readers.Count;
         public int CameraCount => cameras.Count;
 
@@ -181,7 +182,7 @@ namespace UniVRMXT.Mtoonxt
         {
             if (!coverageMaterials.TryGetValue(source, out var copies))
             {
-                var shader = Shader.Find("VRMXT/MToonXT10");
+                var shader = coverageShader ? coverageShader : Shader.Find("VRMXT/MToonXT10");
                 if (shader == null) return;
                 copies = new[] { new Material(shader), new Material(shader) };
                 foreach (var copy in copies) copy.hideFlags = HideFlags.HideAndDontSave;

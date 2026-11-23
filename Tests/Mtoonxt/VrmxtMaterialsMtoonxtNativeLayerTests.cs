@@ -55,14 +55,14 @@ namespace UniVRMXT.Tests.Mtoonxt
             Object.DestroyImmediate(mesh);
         }
 
-        private VrmxtMaterialsMtoonxtAuxiliaryRenderer Apply(string extra = "")
+        private VrmxtMaterialsMtoonxtAuxiliaryRenderer Apply(string extra = "", Func<string, Shader> resolveShader = null)
         {
             var json = "{\"extensions\":{\"VRMXT_materials_mtoonxt\":{\"specVersion\":\"1.0\","
                 + "\"stencil\":[{\"writers\":[0],\"readers\":[1],\"showWritersThroughOccluders\":true"
                 + extra + "}]}},\"materials\":["
                 + "{\"name\":\"Writer\",\"extensions\":{\"VRMC_materials_mtoon\":{\"specVersion\":\"1.0\"}}},"
                 + "{\"name\":\"Reader\",\"extensions\":{\"VRMC_materials_mtoon\":{\"specVersion\":\"1.0\"}}}]}";
-            Assert.AreEqual(2, VrmxtMaterialsMtoonxtApplier.Apply(root, json));
+            Assert.AreEqual(2, VrmxtMaterialsMtoonxtApplier.Apply(root, json, resolveShader));
             return root.GetComponent<VrmxtMaterialsMtoonxtAuxiliaryRenderer>();
         }
 
@@ -147,6 +147,22 @@ namespace UniVRMXT.Tests.Mtoonxt
             auxiliary.Configure(null, null);
             Assert.AreSame(mesh, renderer.sharedMesh);
             Assert.AreEqual(2, renderer.sharedMaterials.Length);
+        }
+
+        [Test]
+        public void CoverageDraws_UseTheHostShaderResolver()
+        {
+            const string name = "Hidden/UniVRMXT/StencilCoverageMask";
+            var requests = 0;
+            var coverage = Shader.Find(name);
+            Assert.IsNotNull(coverage);
+            var auxiliary = Apply(",\"ignoreOccludedReaderAreas\":false", shaderName =>
+            {
+                if (shaderName == name) requests++;
+                return Shader.Find(shaderName);
+            });
+            Assert.AreEqual(1, requests);
+            Assert.IsTrue(auxiliary.Draws.Any(draw => !draw.AfterOpaque && draw.Material.shader == coverage));
         }
 
         [Test]

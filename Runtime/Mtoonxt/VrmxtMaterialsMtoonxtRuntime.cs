@@ -25,6 +25,7 @@ namespace UniVRMXT.Mtoonxt
             }
 
             var found = new List<VrmxtMaterialsMtoonxtPair>();
+            var shadowRules = new List<IndexedShadowReceiver>();
             var parsedRelationships = new List<VrmxtMaterialsMtoonxtRelationship>();
             if (
                 !string.IsNullOrWhiteSpace(gltfJson)
@@ -38,6 +39,7 @@ namespace UniVRMXT.Mtoonxt
                     out parsedRelationships
                 );
                 var referenced = ReferencedMaterialIndices(parsedRelationships);
+                shadowRules = VrmxtShadowReceivers.Read(gltfRoot["extensions"]?[VrmxtMaterialsMtoonxt.ExtensionName] as JObject, materials, referenced);
                 for (var i = 0; i < materials.Count; i++)
                 {
                     var materialObject = materials[i] as JObject;
@@ -80,6 +82,20 @@ namespace UniVRMXT.Mtoonxt
                 VrmxtMaterialsMtoonxtAuthoring.PopulateFromExtensionJson(root, store);
             }
 
+            store.ShadowReceivers.Clear();
+            foreach (var rule in shadowRules)
+            {
+                var receiver = VrmxtMaterialsMtoonxtAuthoring.FindMaterial(root, store, rule.Receiver);
+                if (!receiver) continue;
+                var policy = new VrmxtShadowReceiver { Receiver = receiver, ReceiveOthers = rule.Others, ReceiveSelf = rule.Self };
+                foreach (var index in rule.Exclusions)
+                {
+                    var caster = VrmxtMaterialsMtoonxtAuthoring.FindMaterial(root, store, index);
+                    if (caster) policy.ExcludedCasters.Add(caster);
+                }
+                store.ShadowReceivers.Add(policy);
+            }
+            BindShadowRuntime(root, store.ShadowReceivers);
             store.SetStencilRelationships(null);
             if (parsedRelationships.Count > 0)
             {
@@ -91,6 +107,19 @@ namespace UniVRMXT.Mtoonxt
             }
 
             return true;
+        }
+
+        private static void BindShadowRuntime(GameObject root, List<VrmxtShadowReceiver> rows)
+        {
+            var runtime = root.GetComponent<VrmxtShadowRuntime>();
+            if (!runtime && rows.Count == 0) return;
+            if (!runtime) runtime = root.AddComponent<VrmxtShadowRuntime>();
+            runtime.policies = rows.ConvertAll(rule => new VrmxtShadowRuntime.Policy {
+                receiver = rule.Receiver, others = rule.ReceiveOthers, self = rule.ReceiveSelf,
+                excluded = rule.ExcludedCasters.ToArray()
+            }).ToArray();
+            runtime.CaptureSlots();
+            runtime.Refresh();
         }
 
         private static void DisambiguateDuplicateNames(List<VrmxtMaterialsMtoonxtPair> found)

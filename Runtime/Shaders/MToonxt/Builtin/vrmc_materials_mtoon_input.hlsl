@@ -36,6 +36,7 @@ half _RimFresnelPower;
 half _RimLift;
 half _RimLightingMix;
 half _OutlineWidth;
+half _VRMXTGeometricOutline;
 half _OutlineLightingMix;
 float _UvAnimScrollXSpeed;
 float _UvAnimScrollYSpeed;

@@ -179,7 +179,7 @@ namespace UniVRMXT.Editor.Mtoonxt
             MethodInfo tryGetMaterialIndex
         )
         {
-            if (store.StencilRelationships.Count == 0 || tryGetMaterialIndex == null)
+            if ((store.StencilRelationships.Count == 0 && store.ShadowReceivers.Count == 0) || tryGetMaterialIndex == null)
             {
                 return;
             }
@@ -214,19 +214,23 @@ namespace UniVRMXT.Editor.Mtoonxt
                     material
                 )
             );
-            if (relationships.Count == 0)
+            var shadows = VrmxtShadowReceivers.Export(store.ShadowReceivers,
+                material => ResolveMaterialIndex(contextObj, type, tryGetMaterialIndex, material));
+            if (relationships.Count == 0 && shadows.Count == 0)
             {
                 return;
             }
 
+            var rootExtension = relationships.Count > 0
+                ? Newtonsoft.Json.Linq.JObject.Parse(VrmxtMaterialsMtoonxtRelationships.ToJson(relationships))
+                : new Newtonsoft.Json.Linq.JObject { ["specVersion"] = "1.0" };
+            if (shadows.Count > 0) rootExtension["shadowReceivers"] = shadows;
             addRootExtension.Invoke(
                 contextObj,
                 new object[]
                 {
                     VrmxtMaterialsMtoonxt.ExtensionName,
-                    Encoding.UTF8.GetBytes(
-                        VrmxtMaterialsMtoonxtRelationships.ToJson(relationships)
-                    ),
+                    Encoding.UTF8.GetBytes(rootExtension.ToString(Newtonsoft.Json.Formatting.None)),
                 }
             );
         }

@@ -627,7 +627,7 @@ namespace UniVRMXT.Mtoonxt
             return indices;
         }
 
-        private static Material FindMaterial(
+        internal static Material FindMaterial(
             GameObject root,
             VrmxtMaterialsMtoonxtInstance store,
             int gltfIndex

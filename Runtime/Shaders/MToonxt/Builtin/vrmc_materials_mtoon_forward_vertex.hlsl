@@ -25,11 +25,22 @@ Varyings MToonVertex(const Attributes v) // v is UnityCG macro specified name.
 
     if (MToon_IsOutlinePass())
     {
-        const VertexPositionInfo position = MToon_GetOutlineVertex(v.vertex.xyz, normalize(v.normalOS), output.uv);
+        half3 outlineNormal = normalize(v.normalOS);
+#if defined(MTOON_PASS_OUTLINE)
+        if (_VRMXTGeometricOutline > 0.5 && dot(v.outlineDirectionTS, v.outlineDirectionTS) > 0.01)
+        {
+            float3 tangent = v.tangentOS.xyz - outlineNormal * dot(v.tangentOS.xyz, outlineNormal);
+            tangent *= rsqrt(max(dot(tangent, tangent), 1e-10));
+            float3 bitangent = cross(outlineNormal, tangent);
+            outlineNormal = normalize(tangent * v.outlineDirectionTS.x + bitangent * v.outlineDirectionTS.y
+                + outlineNormal * v.outlineDirectionTS.z);
+        }
+#endif
+        const VertexPositionInfo position = MToon_GetOutlineVertex(v.vertex.xyz, outlineNormal, output.uv);
         output.pos = position.positionCS;
         output.positionWS = position.positionWS.xyz;
 
-        output.normalWS = MToon_TransformObjectToWorldNormal(-v.normalOS);
+        output.normalWS = MToon_TransformObjectToWorldNormal(-outlineNormal);
     }
     else
     {

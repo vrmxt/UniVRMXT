@@ -7,7 +7,10 @@ struct Attributes
 {
     float4 vertex : POSITION; // UnityCG macro specified name. Accurately "positionOS"
     float3 normalOS : NORMAL;
-#if defined(_NORMALMAP)
+#if defined(MTOON_PASS_OUTLINE)
+    float3 outlineDirectionTS : TEXCOORD7;
+#endif
+#if defined(_NORMALMAP) || defined(MTOON_PASS_OUTLINE)
     float4 tangentOS : TANGENT;
 #endif
     float2 texcoord0 : TEXCOORD0;

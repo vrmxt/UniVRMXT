@@ -42,6 +42,7 @@ Shader "VRMXT/MToonXT10"
         _RimLightingMix ("mtoon.rimLightingMixFactor", Range(0, 1)) = 1
 
         // Outline
+        [HideInInspector] _VRMXTGeometricOutline ("Use baked geometric outline directions", Float) = 0
         _OutlineWidthMode ("mtoon.outlineWidthMode", Int) = 0
         [PowerSlider(2.2)] _OutlineWidth ("mtoon.outlineWidthFactor", Range(0, 0.05)) = 0
         _OutlineWidthTex ("mtoon.outlineWidthMultiplyTexture", 2D) = "white" {} // channel G
@@ -132,7 +133,109 @@ Shader "VRMXT/MToonXT10"
             ENDHLSL
         }
 
-        // Built-in Forward Base Pass
+        // With ZTest Always, paint the expanded silhouette first so the subject covers its interior.
+        Pass
+        {
+            Name "FORWARD_BASE_OUTLINE_OVERLAY"
+            Tags { "LightMode" = "ForwardBase" }
+
+            Cull Front
+            Blend [_M_SrcBlend] [_M_DstBlend]
+            ZWrite Off
+            ZTest Always
+            ColorMask [_M_ColorMask]
+            Offset 1, 1
+            BlendOp Add, Max
+            AlphaToMask [_M_AlphaToMask]
+
+            Stencil
+            {
+                Ref [_M_OutlineStencilRef]
+                ReadMask [_M_OutlineStencilReadMask]
+                WriteMask [_M_OutlineStencilWriteMask]
+                Comp [_M_OutlineStencilComp]
+                Pass [_M_OutlineStencilPass]
+                Fail [_M_OutlineStencilFail]
+                ZFail [_M_OutlineStencilZFail]
+            }
+
+            HLSLPROGRAM
+            #pragma target 3.0
+
+            #pragma multi_compile_fwdbase nolightmap nodynlightmap nodirlightmap novertexlight
+            #pragma multi_compile_fog
+            #pragma multi_compile_instancing
+
+            #pragma multi_compile __ _ALPHATEST_ON _ALPHABLEND_ON
+            #pragma multi_compile __ _NORMALMAP
+            #pragma multi_compile __ _MTOON_EMISSIVEMAP
+            #pragma multi_compile __ _MTOON_RIMMAP
+            #pragma multi_compile __ _MTOON_PARAMETERMAP
+            #pragma multi_compile __ _MTOON_OUTLINE_WORLD _MTOON_OUTLINE_SCREEN
+            #pragma shader_feature_local _ _MTOONXT_OUTLINE_OVERLAY_DEPTH
+
+            #pragma vertex MToonVertex
+            #pragma fragment MToonFragment
+
+            #define MTOON_PASS_OUTLINE
+            #define MTOONXT_OVERLAY_DEPTH_PASS
+
+            #include "./vrmc_materials_mtoon_forward_vertex.hlsl"
+            #include "./vrmc_materials_mtoon_forward_fragment.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "FORWARD_BASE_OUTLINE"
+            Tags { "LightMode" = "ForwardBase" }
+
+            Cull Front
+            Blend [_M_SrcBlend] [_M_DstBlend]
+            ZWrite [_M_ZWrite]
+            ZTest [_M_ZTest]
+            ColorMask [_M_ColorMask]
+            Offset 1, 1
+            BlendOp Add, Max
+            AlphaToMask [_M_AlphaToMask]
+
+            Stencil
+            {
+                Ref [_M_OutlineStencilRef]
+                ReadMask [_M_OutlineStencilReadMask]
+                WriteMask [_M_OutlineStencilWriteMask]
+                Comp [_M_OutlineStencilComp]
+                Pass [_M_OutlineStencilPass]
+                Fail [_M_OutlineStencilFail]
+                ZFail [_M_OutlineStencilZFail]
+            }
+
+            HLSLPROGRAM
+            #pragma target 3.0
+
+            // Unity defined keywords
+            #pragma multi_compile_fwdbase nolightmap nodynlightmap nodirlightmap novertexlight
+            #pragma multi_compile_fog
+            #pragma multi_compile_instancing
+
+            #pragma multi_compile __ _ALPHATEST_ON _ALPHABLEND_ON
+            #pragma multi_compile __ _NORMALMAP
+            #pragma multi_compile __ _MTOON_EMISSIVEMAP
+            #pragma multi_compile __ _MTOON_RIMMAP
+            #pragma multi_compile __ _MTOON_PARAMETERMAP
+            #pragma multi_compile __ _MTOON_OUTLINE_WORLD _MTOON_OUTLINE_SCREEN
+            #pragma shader_feature_local _ _MTOONXT_OUTLINE_OVERLAY_DEPTH
+
+            #pragma vertex MToonVertex
+            #pragma fragment MToonFragment
+
+            #define MTOON_PASS_OUTLINE
+
+            #include "./vrmc_materials_mtoon_forward_vertex.hlsl"
+            #include "./vrmc_materials_mtoon_forward_fragment.hlsl"
+            ENDHLSL
+        }
+
         Pass
         {
             Name "FORWARD_BASE"
@@ -228,108 +331,7 @@ Shader "VRMXT/MToonXT10"
             ENDHLSL
         }
 
-        // Built-in Forward Base Pass: OUTLINE
-        Pass
-        {
-            Name "FORWARD_BASE_OUTLINE"
-            Tags { "LightMode" = "ForwardBase" }
 
-            Cull Front
-            Blend [_M_SrcBlend] [_M_DstBlend]
-            ZWrite [_M_ZWrite]
-            ZTest [_M_ZTest]
-            ColorMask [_M_ColorMask]
-            Offset 1, 1
-            BlendOp Add, Max
-            AlphaToMask [_M_AlphaToMask]
-
-            Stencil
-            {
-                Ref [_M_OutlineStencilRef]
-                ReadMask [_M_OutlineStencilReadMask]
-                WriteMask [_M_OutlineStencilWriteMask]
-                Comp [_M_OutlineStencilComp]
-                Pass [_M_OutlineStencilPass]
-                Fail [_M_OutlineStencilFail]
-                ZFail [_M_OutlineStencilZFail]
-            }
-
-            HLSLPROGRAM
-            #pragma target 3.0
-
-            // Unity defined keywords
-            #pragma multi_compile_fwdbase nolightmap nodynlightmap nodirlightmap novertexlight
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-
-            #pragma multi_compile __ _ALPHATEST_ON _ALPHABLEND_ON
-            #pragma multi_compile __ _NORMALMAP
-            #pragma multi_compile __ _MTOON_EMISSIVEMAP
-            #pragma multi_compile __ _MTOON_RIMMAP
-            #pragma multi_compile __ _MTOON_PARAMETERMAP
-            #pragma multi_compile __ _MTOON_OUTLINE_WORLD _MTOON_OUTLINE_SCREEN
-            #pragma shader_feature_local _ _MTOONXT_OUTLINE_OVERLAY_DEPTH
-
-            #pragma vertex MToonVertex
-            #pragma fragment MToonFragment
-
-            #define MTOON_PASS_OUTLINE
-
-            #include "./vrmc_materials_mtoon_forward_vertex.hlsl"
-            #include "./vrmc_materials_mtoon_forward_fragment.hlsl"
-            ENDHLSL
-        }
-
-        Pass
-        {
-            Name "FORWARD_BASE_OUTLINE_OVERLAY"
-            Tags { "LightMode" = "ForwardBase" }
-
-            Cull Front
-            Blend [_M_SrcBlend] [_M_DstBlend]
-            ZWrite Off
-            ZTest Always
-            ColorMask [_M_ColorMask]
-            Offset 1, 1
-            BlendOp Add, Max
-            AlphaToMask [_M_AlphaToMask]
-
-            Stencil
-            {
-                Ref [_M_OutlineStencilRef]
-                ReadMask [_M_OutlineStencilReadMask]
-                WriteMask [_M_OutlineStencilWriteMask]
-                Comp [_M_OutlineStencilComp]
-                Pass [_M_OutlineStencilPass]
-                Fail [_M_OutlineStencilFail]
-                ZFail [_M_OutlineStencilZFail]
-            }
-
-            HLSLPROGRAM
-            #pragma target 3.0
-
-            #pragma multi_compile_fwdbase nolightmap nodynlightmap nodirlightmap novertexlight
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-
-            #pragma multi_compile __ _ALPHATEST_ON _ALPHABLEND_ON
-            #pragma multi_compile __ _NORMALMAP
-            #pragma multi_compile __ _MTOON_EMISSIVEMAP
-            #pragma multi_compile __ _MTOON_RIMMAP
-            #pragma multi_compile __ _MTOON_PARAMETERMAP
-            #pragma multi_compile __ _MTOON_OUTLINE_WORLD _MTOON_OUTLINE_SCREEN
-            #pragma shader_feature_local _ _MTOONXT_OUTLINE_OVERLAY_DEPTH
-
-            #pragma vertex MToonVertex
-            #pragma fragment MToonFragment
-
-            #define MTOON_PASS_OUTLINE
-            #define MTOONXT_OVERLAY_DEPTH_PASS
-
-            #include "./vrmc_materials_mtoon_forward_vertex.hlsl"
-            #include "./vrmc_materials_mtoon_forward_fragment.hlsl"
-            ENDHLSL
-        }
 
         // Built-in Forward Add Pass
         Pass

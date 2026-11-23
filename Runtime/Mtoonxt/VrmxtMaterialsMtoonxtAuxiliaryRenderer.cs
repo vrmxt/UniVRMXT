@@ -35,6 +35,7 @@ namespace UniVRMXT.Mtoonxt
         private readonly Dictionary<Camera, CommandBuffer> cameras =
             new Dictionary<Camera, CommandBuffer>();
 
+        public IReadOnlyList<VrmxtMtoonxtAuxiliaryDraw> Draws => draws;
         public int DrawCount => draws.Count;
         public int NativeRendererCount => nativeBindings.Count;
 

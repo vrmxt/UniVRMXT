@@ -175,6 +175,17 @@ namespace UniVRMXT.Mtoonxt
                 }
             }
 
+            if (relationshipPlans.Count > 0)
+            {
+                store.graphShader = shader;
+                foreach (var plan in relationshipPlans)
+                    if (plan.CoverageMode != VrmxtMtoonxtCoverageMode.None)
+                    {
+                        store.relationshipCoverageShader = VrmxtMaterialsOverrideApplier.ResolveShader(
+                            VrmxtMaterialsMtoonxtRelationshipApplier.CoverageShaderName, resolveShader);
+                        break;
+                    }
+            }
             VrmxtMaterialsMtoonxtRelationshipApplier.Apply(
                 root,
                 store,

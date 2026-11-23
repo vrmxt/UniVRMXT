@@ -38,6 +38,7 @@ Shader "VRMXT/Universal Render Pipeline/MToonXT10"
         _RimLightingMix ("mtoon.rimLightingMixFactor", Range(0, 1)) = 1
 
         // Outline
+        [HideInInspector] _VRMXTGeometricOutline ("Use baked geometric outline directions", Float) = 0
         _OutlineWidthMode ("mtoon.outlineWidthMode", Int) = 0
         [PowerSlider(2.2)] _OutlineWidth ("mtoon.outlineWidthFactor", Range(0, 0.05)) = 0
         _OutlineWidthTex ("mtoon.outlineWidthMultiplyTexture", 2D) = "white" {} // channel G

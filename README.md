@@ -41,3 +41,23 @@ when this package is consumed inside a project with UniVRM restored. See
 ## License
 
 MIT — see [LICENSE.txt](LICENSE.txt).
+
+### Optional MToonXT shadow receivers
+
+The VRM 1 import and export hooks preserve per-material `receiveSelf`,
+`receiveOthers`, and `excludedCasters` settings. References use glTF material
+indices. In the built-in forward renderer, filtered receivers follow the scene’s
+main directional light. The runtime automatically chooses unused, unnamed
+Unity layers and shares a layer among receivers with equivalent caster sets
+and source layers. If the scene has too few free layers, the runtime restores
+ordinary rendering and reports the shortage. Unfiltered avatars need no helper
+lights. Point lights, spotlights, URP and non-mesh casters are outside this
+implementation.
+
+For a Warudo character mod, save the imported character as an editable prefab
+named `Character` in the mod directory. Select it and choose **Assets → VRMXT →
+Prepare character shadow receivers for Warudo**, wait for the preparation message,
+then build the mod with the Warudo SDK. This packages a loose runtime script and
+serializes the receiver and caster bindings by renderer and material slot.
+Those bindings survive the player's material instancing. Preparing the prefab
+again preserves user edits to previously generated source.

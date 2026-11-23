@@ -822,14 +822,14 @@ namespace UniVRMXT.Tests.MaterialsOverride
         }
 
         [Test]
-        public void Apply_ShaderChange_ClearsUnlistedMainTex_WhenOmittedFromOverride()
+        public void Apply_ShaderChange_KeepsMainTex_ForParameterOnlyOverride()
         {
             var root = CreateRootWithNamedMaterial("Hair", out var material);
             var stockTexture = new Texture2D(2, 2);
             var targetShader = Shader.Find("Unlit/Texture");
             Assert.IsNotNull(
                 targetShader,
-                "Unlit/Texture required for shader-swap texture clear test"
+                "Unlit/Texture required for parameter-only shader swap"
             );
 
             try
@@ -875,7 +875,7 @@ namespace UniVRMXT.Tests.MaterialsOverride
 
                 Assert.AreEqual(1, applied);
                 Assert.AreSame(targetShader, material.shader);
-                Assert.IsNull(material.GetTexture("_MainTex"));
+                Assert.AreSame(stockTexture, material.GetTexture("_MainTex"));
                 Assert.AreEqual(new Color(1f, 0f, 0f, 1f), material.GetColor("_Color"));
             }
             finally

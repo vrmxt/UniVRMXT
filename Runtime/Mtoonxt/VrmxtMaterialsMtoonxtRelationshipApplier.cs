@@ -7,7 +7,7 @@ namespace UniVRMXT.Mtoonxt
 {
     public static class VrmxtMaterialsMtoonxtRelationshipApplier
     {
-        private const string CoverageShaderName = "Hidden/UniVRMXT/StencilCoverageMask";
+        internal const string CoverageShaderName = "Hidden/UniVRMXT/StencilCoverageMask";
         private const int RelationshipMaskQueue = 2451;
         private const int RelationshipSubjectQueue = 2452;
         private const int RelationshipOverlayQueue = 2453;
@@ -57,6 +57,7 @@ namespace UniVRMXT.Mtoonxt
                     reader.Material.renderQueue = RelationshipSubjectQueue;
                 }
                 var graph = root.GetComponent<VrmxtStencilGraphRenderer>() ?? root.AddComponent<VrmxtStencilGraphRenderer>();
+                graph.coverageShader = store.graphShader;
                 graph.Configure(rules);
                 return plans.Count;
             }
@@ -105,6 +106,7 @@ namespace UniVRMXT.Mtoonxt
                 if (plan.CoverageMode != VrmxtMtoonxtCoverageMode.None)
                 {
                     AddCoverageDraws(
+                        store.relationshipCoverageShader,
                         plan,
                         gpuBase,
                         writerSlots,
@@ -307,6 +309,7 @@ namespace UniVRMXT.Mtoonxt
         }
 
         private static void AddCoverageDraws(
+            Shader resolvedShader,
             VrmxtMtoonxtRelationshipPlan plan,
             int gpuBase,
             IReadOnlyList<MaterialSlot> writerSlots,
@@ -315,7 +318,7 @@ namespace UniVRMXT.Mtoonxt
             ICollection<Material> owned
         )
         {
-            var shader = Shader.Find(CoverageShaderName);
+            var shader = resolvedShader ? resolvedShader : Shader.Find(CoverageShaderName);
             if (shader == null)
             {
                 Debug.LogWarning("UniVRMXT: stencil relationship coverage shader is missing.");
